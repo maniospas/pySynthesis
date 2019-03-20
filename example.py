@@ -19,3 +19,51 @@ def load_custom_model(path, x, y):
         # save
         pickle.dump(custom, path)
     return custom
+
+"""
+def adaboost(X_train, y_train):
+    # estimator
+    svc=SVC(probability=True, kernel='linear')
+    # Create and train adaboost classifer
+    abc = AdaBoostClassifier(n_estimators=50, base_estimator=svc, learning_rate=1)
+    model = abc.fit(X_train, y_train)
+    return model
+"""
+
+def laplacian_parameters(G, symm):
+    # calculate asymetric Laplacian normalization
+    degv = {v : float(len(list(G.neighbors(v))))**symm for v in G.nodes()}
+    degu = {u : float(len(list(G.neighbors(u))))**(1-symm) for u in G.nodes()}
+    return degv, degu
+
+def visualize(G, p):
+    # normalize priors
+    p_sum = sum(p.values())
+    normalized_prior_ranks = {u: p[u]/p_sum for u in p}
+    #
+    print('----- Visualizing using d3 -----')
+    data = {}
+    data['nodes'] = [{'id':str(u),'color_intensity':normalized_prior_ranks[u]} for u in G.nodes()]
+    data['links'] = [{'source':str(node1),'target':str(node2),'value':1} for node1,node2 in G.edges()]
+    import os, json
+    with open('visualize/data.json', 'w') as outfile:  
+        json.dump(data, outfile)
+    os.system('start firefox.exe "file:///'+os.getcwd()+'/visualize/visualize.html"')
+
+def pagerank(G, prior_ranks, a, msq_error):
+    # calculate normalization parameters of symmetric Laplacian
+    degv = {v : float(len(list(G.neighbors(v))))**0.5 for v in G.nodes()}
+    degu = {u : float(len(list(G.neighbors(u))))**0.5 for u in G.nodes()}
+    # iterate to calculate PageRank
+    ranks = prior_ranks
+    while True:
+        msq = 0
+        next_ranks = {}
+        for u in G.nodes():
+            rank = sum(ranks[v]/degv[v]/degu[u] for v in G.neighbors(u))
+            next_ranks[u] = rank*a + prior_ranks[u]*(1-a)
+            msq += (next_ranks[u]-ranks[u])**2
+        ranks = next_ranks
+        if msq/len(G.nodes())<msq_error:
+            break
+    return ranks

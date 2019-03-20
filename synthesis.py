@@ -1,4 +1,5 @@
 import analysis as ly
+import blocks as bl
 from analysis import get_description
 
 def _construct_blocks(texts):
@@ -20,7 +21,7 @@ def _construct_blocks(texts):
         variable_descriptions = {variable: get_description(expressions, variable) for variable in variables}
         
         # find each block io
-        for block in ly.get_expression_blocks(expressions):
+        for block in bl.get_expression_blocks(expressions):
             block.find_io(variables)
             for variable in block.inputs:
                 block.variable_descriptions[variable] = variable_descriptions[variable]
@@ -77,7 +78,7 @@ def import_from(file):
 def synthesize(problem, texts, VARIABLE_STRICTNESS = 2, BLOCK_STRICTNESS = 0, CODE_SIZE_PENALTY = 0.01): 
     remaining_problem = problem
     blocks = _construct_blocks(texts)
-    outcome = ly.Block()
+    outcome = bl.Block()
     outcome.aligned = {}
     outcome.all_variables = list()
     while True:
@@ -91,9 +92,16 @@ def synthesize(problem, texts, VARIABLE_STRICTNESS = 2, BLOCK_STRICTNESS = 0, CO
                 break
             var1_keywords = best_block.variable_descriptions[var1]
             best_var = max([var for var in outcome.variable_descriptions.keys() if var not in already_assigned], key = (lambda var2: _similarity(var1_keywords, outcome.variable_descriptions[var2])))
+            """
+            for var2 in outcome.variable_descriptions.keys():
+                if var2 not in already_assigned:
+                    val = _similarity(var1_keywords, outcome.variable_descriptions[var2])
+                    print(var1, var2, val, var1_keywords, '|', outcome.variable_descriptions[var2])
+            """
             if _similarity(var1_keywords, outcome.variable_descriptions[best_var])>=VARIABLE_STRICTNESS:
                 outcome.aligned[var1] = best_var
                 outcome.variable_descriptions[best_var] += " "+best_block.variable_descriptions[var1]
+                #print('Selected', outcome.aligned)
                 already_assigned.append(best_var)
         outcome.expressions.extend(best_block.expressions)
         for variable in best_block.variable_descriptions.keys():
@@ -105,7 +113,7 @@ def synthesize(problem, texts, VARIABLE_STRICTNESS = 2, BLOCK_STRICTNESS = 0, CO
         outcome.all_variables.extend(best_block_vars)
         outcome.find_io(outcome.all_variables)
         remaining_problem = _difference(remaining_problem, best_block.comments+" "+ly.get_description(best_block.expressions))
-        #print(remaining_problem)
+        print(remaining_problem)
     outcome.all_variables = ly.unique(outcome.all_variables)
     outcome.expressions = ly.alter_var_names(outcome.expressions, outcome.aligned)
     outcome.expressions = ly.deflatten(outcome.expressions)
