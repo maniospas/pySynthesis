@@ -19,12 +19,13 @@ def _construct_blocks(texts):
         variables.extend(argument_variables)
         variables = ly.unique(variables)
         # rename variables
+        variable_rename_inverse_map = {"___block"+str(text_id)+"_"+var_name: var_name for var_name in variables}
         variable_raname_map = {var_name: "___block"+str(text_id)+"_"+var_name for var_name in variables}
         variables = list(variable_raname_map.values())
         argument_variables = [variable_raname_map[var_name] for var_name in argument_variables]
         expressions = ly.alter_var_names(expressions, variable_raname_map)
         
-        variable_descriptions = {variable: get_description(expressions, variable) for variable in variables}
+        variable_descriptions = {variable: get_description(expressions, variable).replace(variable, variable_rename_inverse_map[variable]) for variable in variables}
         print(variable_descriptions)
         
         # find each block io
@@ -54,13 +55,17 @@ def _similarity(text1, text2):
     sim = 0
     words1 = [stemmer.stem(word1) for word1 in _word_tokenize(text1.lower()) if len(word1)>=1 and not '_' in word1 and not word1 in stopWords]
     words2 = [stemmer.stem(word2) for word2 in _word_tokenize(text2.lower()) if len(word2)>=1 and not '_' in word2 and not word2 in stopWords]
-    words1 = list(set(words1))
-    words2 = list(set(words2))
+    #words1 = ly.unique(words1)
+    #words2 = ly.unique(words2)
     for word1 in set(words1):
         for word2 in set(words2):
             if word1==word2:
                 sim += 1
-    return sim
+    return sim #* 10 / min([len(words1), len(words2)])
+
+
+def _variable_similarity(text1, text2):
+    return _similarity(text1, text2)
 
 
 def _difference(text1, text2):
@@ -70,7 +75,9 @@ def _difference(text1, text2):
     result = ""
     for word in words_original:
         if not word_map.get(word,"") in words2:
-            result += word + " ";
+            result += word + " "
+        else:
+            words2.remove(word_map.get(word,"")) #remove one entry only
     return result.strip()
 
 
@@ -124,13 +131,22 @@ def import_from(file):
         texts.append(accum)
     return texts
 
-def synthesize(problem, texts, VARIABLE_STRICTNESS = None, BLOCK_STRICTNESS = 1, CODE_SIZE_PENALTY = 0.01): 
+def description_features(text):
+    return text
+    #tokens = _word_tokenize(text)
+    #return " ".join([word1+word2 for word1 in tokens if word1 not in stopWords for word2 in tokens])
+
+def synthesize(problem, texts, VARIABLE_STRICTNESS = None, BLOCK_STRICTNESS = 1, CODE_SIZE_PENALTY = 0.01):
     remaining_problem = problem
     blocks = _construct_blocks(texts)
     outcome = bl.Block()
     outcome.aligned = {}
     outcome.all_variables = list()
     outcome.expression_groups = list()
+
+    remaining_problem = description_features(remaining_problem)
+    for block in blocks:
+        block.comments = description_features(block.comments)
     
     print("=== DATABASE ===")
     for block in blocks:
@@ -141,10 +157,11 @@ def synthesize(problem, texts, VARIABLE_STRICTNESS = None, BLOCK_STRICTNESS = 1,
     if VARIABLE_STRICTNESS is None:
         VARIABLE_STRICTNESS = 1
         for block in blocks:
-            for var1, desc1 in block.variable_descriptions.items():
-                for var2, desc2 in block.variable_descriptions.items():
-                    if var1!=var2:
-                        VARIABLE_STRICTNESS = max(VARIABLE_STRICTNESS,  _similarity(desc1, desc2)/3)
+            if _similarity(block.comments+" "+ly.get_description(block.expressions), remaining_problem)-len(block.expressions)*CODE_SIZE_PENALTY>=BLOCK_STRICTNESS:
+                for var1, desc1 in block.variable_descriptions.items():
+                    for var2, desc2 in block.variable_descriptions.items():
+                        if var1!=var2:
+                            VARIABLE_STRICTNESS = max(VARIABLE_STRICTNESS,  _similarity(desc1, desc2)/2)
         print('AUTO DETECTED VARIABLE STRICTNESS:', VARIABLE_STRICTNESS)
     while True:
         print("\n=== NEXT ITERATION ===")
@@ -158,14 +175,16 @@ def synthesize(problem, texts, VARIABLE_STRICTNESS = None, BLOCK_STRICTNESS = 1,
             if len(outcome.all_variables)<=len(already_assigned) or len(outcome.variable_descriptions)<=len(already_assigned):
                 break
             var1_keywords = best_block.variable_descriptions[var1]
-            best_var = max([var for var in outcome.variable_descriptions.keys() if var not in already_assigned], key = (lambda var2: _similarity(var1_keywords, outcome.variable_descriptions[var2])))
-            """
+            best_var = max([var for var in outcome.variable_descriptions.keys() if var not in already_assigned], key = (lambda var2: _variable_similarity(var1_keywords, outcome.variable_descriptions[var2])))
+
+
             for var2 in outcome.variable_descriptions.keys():
                 if var2 not in already_assigned:
-                    val = _similarity(var1_keywords, outcome.variable_descriptions[var2])
+                    val = _variable_similarity(var1_keywords, outcome.variable_descriptions[var2])
                     print(var1, var2, val, var1_keywords, '|', outcome.variable_descriptions[var2])
-            """
-            if _similarity(var1_keywords, outcome.variable_descriptions[best_var])>=VARIABLE_STRICTNESS:
+
+
+            if _variable_similarity(var1_keywords, outcome.variable_descriptions[best_var])>=VARIABLE_STRICTNESS:
                 outcome.aligned[var1] = best_var
                 outcome.variable_descriptions[best_var] += " "+best_block.variable_descriptions[var1]
                 #print('Selected', outcome.aligned)

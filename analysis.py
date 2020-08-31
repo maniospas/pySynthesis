@@ -249,8 +249,9 @@ def get_description(expressions, variable=None):
                 if len(term)>=min_predicate_length and not term=="def":
                     description += term+" "
         else:
-            if len(get_input_variables([expression], [variable]))>0 or variable in get_output_variables([expression]):
-                pred = "before"
+            if variable in get_input_variables([expression], [variable]) or variable in get_output_variables([expression]):
+                #pred = "before" if variable not in expression else "after"
+                pred = "coo"#cooccuring
                 for term in get_terms([expression], ignore_variables=False):
                     if variable+"."+term in expression:
                         description += "member"+term+" "
@@ -258,10 +259,10 @@ def get_description(expressions, variable=None):
                         continue
                     if not term=="def":
                         description += term+" "
-                    if term==variable:
-                        pred = "after"
-                    else:
-                        description += pred+term+" "
+                    #if term==variable:
+                    #    pred = "before"
+                    #else:
+                    description += pred+term+" "
     if not variable is None:
         description += " ".join(variable.split("_"))
     return description

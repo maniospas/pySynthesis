@@ -10,15 +10,16 @@ class Block:
     def find_io(self, variables):
         output_vars = list()
         input_vars = list()
+        transformed_vars = list()
         for expression in self.expressions:
             expression_input_vars = analysis.get_input_variables([expression], variables)
             expression_output_vars = analysis.get_output_variables([expression])
             input_vars.extend([input_var for input_var in expression_input_vars if input_var not in output_vars])
             output_vars.extend(expression_output_vars)
-        input_vars = analysis.unique(input_vars)
-        output_vars = analysis.unique(output_vars)
-        self.inputs = input_vars
-        self.outputs = output_vars
+            transformed_vars.extend([input_var for input_var in expression_input_vars if input_var in output_vars])
+        self.inputs = analysis.unique(input_vars)
+        self.outputs = analysis.unique(output_vars)
+        self.transformed_vars = analysis.unique(transformed_vars)
     def convert_to_level(self, top_level):
         min_spaces = min([analysis._count_strarting_spaces(expresion) for expresion in self.expressions])
         if min_spaces < top_level:
