@@ -1,50 +1,5 @@
-def train_lr(x_train, y_train, preprocessing="normalize"):
-    model = LogisticRegression()
-    # select preprocessing method
-    if preprocessing=="normalize":
-        # Normalize training data
-        x_train = (x_train-x_train.min(axis=0))/(x_train.max(axis=0)-x_train.min(axis=0))
-    elif preprocessing=="standardize":
-        # Standardize training data 
-        x_train = (x_train-x_train.mean(axis=0))/(x_train.std(axis=0))
-    # train
-    model.train(x_train, y_train)
-    return model
-
-def test(x_train, y_train, x_test, y_test):
-    model = LogisticRegression()
-    model.train(x_train, y_train)
-    # Evaluate using test data
-    y_hat = model.predict(x_test, probs=True)
-    return scipy.metrics.auc(y_test, y_hat)
-
-def createSVR (x, y):
-    svr = SVR()
-    svr.train(x, y)
-    return svr
-    
-def load_custom_model(path, CustomClassifier, x, y):
-    if os.path.isfile(path):
-        custom = pickle.load(path)
-    else:
-        custom = CustomClassifier()
-        custom.train(x, y)
-        # save
-        pickle.dump(custom, path)
-    return custom
-
-"""
-def adaboost(X_train, y_train):
-    # estimator
-    svc=SVC(probability=True, kernel='linear')
-    # Create and train adaboost classifer
-    abc = AdaBoostClassifier(n_estimators=50, base_estimator=svc, learning_rate=1)
-    model = abc.fit(X_train, y_train)
-    return model
-"""
-
 def laplacian_parameters(G, symm):
-    # calculate asymetric Laplacian normalization
+    # calculate asymmetric Laplacian normalization
     degv = {v : float(len(list(G.neighbors(v))))**symm for v in G.nodes()}
     degu = {u : float(len(list(G.neighbors(u))))**(1-symm) for u in G.nodes()}
     return degv, degu
@@ -80,3 +35,53 @@ def pagerank(G, prior_ranks, a, msq_error):
         if msq/len(G.nodes())<msq_error:
             break
     return ranks
+
+
+def train_lr(x_train, y_train, preprocessing="normalize"):
+    model = LogisticRegression()
+    # select preprocessing method
+    if preprocessing == "normalize":
+        # Normalize training data
+        x_train = (x_train - x_train.min(axis=0)) / (x_train.max(axis=0) - x_train.min(axis=0))
+    elif preprocessing == "standardize":
+        # Standardize training data
+        x_train = (x_train - x_train.mean(axis=0)) / (x_train.std(axis=0))
+    # train
+    model.train(x_train, y_train)
+    return model
+
+
+def test(x_train, y_train, x_test, y_test):
+    model = LogisticRegression()
+    model.train(x_train, y_train)
+    # Evaluate using test data
+    y_hat = model.predict(x_test, probs=True)
+    return scipy.metrics.auc(y_test, y_hat)
+
+
+def createSVR(x, y):
+    svr = SVR()
+    svr.train(x, y)
+    return svr
+
+
+def load_custom_model(path, CustomClassifier, x, y):
+    if os.path.isfile(path):
+        custom = pickle.load(path)
+    else:
+        custom = CustomClassifier()
+        custom.train(x, y)
+        # save
+        pickle.dump(custom, path)
+    return custom
+
+
+"""
+def adaboost(X_train, y_train):
+    # estimator
+    svc=SVC(probability=True, kernel='linear')
+    # Create and train adaboost classifer
+    abc = AdaBoostClassifier(n_estimators=50, base_estimator=svc, learning_rate=1)
+    model = abc.fit(X_train, y_train)
+    return model
+"""

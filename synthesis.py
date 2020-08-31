@@ -1,6 +1,7 @@
 import analysis as ly
 import blocks as bl
 from analysis import get_description, flatten
+from blocks import Block
 
 FLATTENING = False
 
@@ -61,6 +62,7 @@ def _similarity(text1, text2):
                 sim += 1
     return sim
 
+
 def _difference(text1, text2):
     words_original = [word1 for word1 in _word_tokenize(text1)]
     word_map = {word1: stemmer.stem(word1.lower()) for word1 in words_original if len(word1)>=1 and not '_' in word1 and not word1.lower() in stopWords}
@@ -70,6 +72,45 @@ def _difference(text1, text2):
         if not word_map.get(word,"") in words2:
             result += word + " ";
     return result.strip()
+
+
+def _gather_return_to_end(expressions):
+    min_spaces = min([ly._count_strarting_spaces(expresion) for expresion in expressions])
+    all_expressions = list()
+    return_expression = ""
+    for expression in expressions:
+        if ly._count_strarting_spaces(expression)==min_spaces and expression.lstrip().startswith("return "):
+            if len(return_expression) != 0:
+                return_expression += ", "
+            return_expression += expression.lstrip()[7:]
+        else:
+            all_expressions.append(expression)
+    if len(return_expression)!=0:
+        all_expressions.append(" "*min_spaces+"return "+return_expression)
+    return all_expressions
+
+
+def _fix_assignment_order(expressions, expression_groups, variables):
+    blocks = dict()
+    for expression, group in zip(expressions, expression_groups):
+        if group not in blocks:
+            blocks[group] = Block()
+        blocks[group].expressions.append(expression)
+    blocks = list(blocks.values())
+    for block in blocks:
+        block.find_io(variables)
+    # bubblesort
+    for i in range(len(blocks)):
+        for j in range(i+1, len(blocks)):
+            if len(set(blocks[i].inputs)) != len(set(blocks[i].inputs)-set(blocks[j].outputs)):
+                blocks[i], blocks[j] = blocks[j], blocks[i]
+
+
+    all_expressions = list()
+    for block in blocks:
+        all_expressions.extend(block.expressions)
+    return _gather_return_to_end(all_expressions)
+
 
 def import_from(file):
     texts = list()
@@ -89,6 +130,7 @@ def synthesize(problem, texts, VARIABLE_STRICTNESS = None, BLOCK_STRICTNESS = 1,
     outcome = bl.Block()
     outcome.aligned = {}
     outcome.all_variables = list()
+    outcome.expression_groups = list()
     
     print("=== DATABASE ===")
     for block in blocks:
@@ -113,24 +155,25 @@ def synthesize(problem, texts, VARIABLE_STRICTNESS = None, BLOCK_STRICTNESS = 1,
         #print(best_block.expressions)
         already_assigned = list()
         for var1 in best_block.variable_descriptions.keys():
-            if len(outcome.all_variables)<=len(already_assigned):
+            if len(outcome.all_variables)<=len(already_assigned) or len(outcome.variable_descriptions)<=len(already_assigned):
                 break
             var1_keywords = best_block.variable_descriptions[var1]
             best_var = max([var for var in outcome.variable_descriptions.keys() if var not in already_assigned], key = (lambda var2: _similarity(var1_keywords, outcome.variable_descriptions[var2])))
-            
+            """
             for var2 in outcome.variable_descriptions.keys():
                 if var2 not in already_assigned:
                     val = _similarity(var1_keywords, outcome.variable_descriptions[var2])
                     print(var1, var2, val, var1_keywords, '|', outcome.variable_descriptions[var2])
-            
+            """
             if _similarity(var1_keywords, outcome.variable_descriptions[best_var])>=VARIABLE_STRICTNESS:
                 outcome.aligned[var1] = best_var
                 outcome.variable_descriptions[best_var] += " "+best_block.variable_descriptions[var1]
-                print('Selected', outcome.aligned)
+                #print('Selected', outcome.aligned)
                 already_assigned.append(best_var)
         if not FLATTENING:
             best_block.convert_to_level(4)
         outcome.expressions.extend(best_block.expressions)
+        outcome.expression_groups.extend([best_block]*len(best_block.expressions))
         for variable in best_block.variable_descriptions.keys():
             if not variable in outcome.aligned:
                 outcome.variable_descriptions[variable] = outcome.variable_descriptions.get(variable, "")+" "+best_block.variable_descriptions[variable]
@@ -150,7 +193,10 @@ def synthesize(problem, texts, VARIABLE_STRICTNESS = None, BLOCK_STRICTNESS = 1,
     print("\n=== OUTCOME ===")
     outcome.all_variables = ly.unique(outcome.all_variables)
     outcome.expressions = ly.alter_var_names(outcome.expressions, outcome.aligned)
-    outcome.expressions = ly.deflatten(outcome.expressions)
+    outcome.expressions = _fix_assignment_order(outcome.expressions, outcome.expression_groups, outcome.all_variables)
+    outcome.expression_groups = None
+    if FLATTENING:
+        outcome.expressions = ly.deflatten(outcome.expressions)
 
     outcome.find_io(outcome.all_variables)
     real_var_names_map = {var_name: var_name[var_name.find('_',4)+1:] for var_name in outcome.all_variables}
