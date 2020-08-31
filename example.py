@@ -1,3 +1,16 @@
+def train_lr(x_train, y_train, preprocessing="normalize"):
+    model = LogisticRegression()
+    # select preprocessing method
+    if preprocessing=="normalize":
+        # Normalize training data
+        x_train = (x_train-x_train.min(axis=0))/(x_train.max(axis=0)-x_train.min(axis=0))
+    elif preprocessing=="standardize":
+        # Standardize training data 
+        x_train = (x_train-x_train.mean(axis=0))/(x_train.std(axis=0))
+    # train
+    model.train(x_train, y_train)
+    return model
+
 def test(x_train, y_train, x_test, y_test):
     model = LogisticRegression()
     model.train(x_train, y_train)
@@ -10,7 +23,7 @@ def createSVR (x, y):
     svr.train(x, y)
     return svr
     
-def load_custom_model(path, x, y):
+def load_custom_model(path, CustomClassifier, x, y):
     if os.path.isfile(path):
         custom = pickle.load(path)
     else:

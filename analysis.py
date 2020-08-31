@@ -159,7 +159,7 @@ def get_possible_variables(expressions):
                 current_var += c
     return variables
 
-def get_terms(expressions):
+def get_terms(expressions, ignore_variables=True):
     terms = list()
     for expression in expressions:
         if equality_predicate in expression:
@@ -171,12 +171,12 @@ def get_terms(expressions):
         current_var = ""
         for c in expression+" ":
             if _is_not_var_symbol(c):
-                if _is_valid_variable(current_var) and not current_var.startswith("___"):
+                if (_is_valid_variable(current_var) or not ignore_variables) and not current_var.startswith("___"):
                     terms.append(current_var)
                 current_var = ""
             else:
                 current_var += c
-    return terms
+    return [term for term in terms if len(term)!=0]
 
 def get_input_variables(expressions, known_variables):
     variables = list()
@@ -250,13 +250,18 @@ def get_description(expressions, variable=None):
                     description += term+" "
         else:
             if len(get_input_variables([expression], [variable]))>0 or variable in get_output_variables([expression]):
-                for term in get_terms([expression]):
+                pred = "before"
+                for term in get_terms([expression], ignore_variables=False):
                     if variable+"."+term in expression:
                         description += "member"+term+" "
                     elif len(term)<min_predicate_length:
                         continue
                     if not term=="def":
                         description += term+" "
+                    if term==variable:
+                        pred = "after"
+                    else:
+                        description += pred+term+" "
     if not variable is None:
         description += " ".join(variable.split("_"))
     return description

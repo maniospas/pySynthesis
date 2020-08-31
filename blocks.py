@@ -19,6 +19,12 @@ class Block:
         output_vars = analysis.unique(output_vars)
         self.inputs = input_vars
         self.outputs = output_vars
+    def convert_to_level(self, top_level):
+        min_spaces = min([analysis._count_strarting_spaces(expresion) for expresion in self.expressions])
+        if min_spaces < top_level:
+            raise Exception("Block is of lower level")
+        self.expressions = [" "*(analysis._count_strarting_spaces(expresion)-min_spaces+top_level)+expresion.lstrip() for expresion in self.expressions]
+
 
 def get_expression_blocks(expressions):
     block = Block()
@@ -48,7 +54,7 @@ def get_expression_blocks(expressions):
             in_comments = False
         elif in_comments:
             block.comments += expression+"\n"
-        elif expression.strip().startswith("#"):
+        elif expression.strip().startswith("#") and top_level==spaces:
             if not block.empty(): #and top_level==spaces:
                 block = Block()
                 blocks.append(block)
@@ -62,4 +68,11 @@ def get_expression_blocks(expressions):
                 block = Block()
                 blocks.append(block)
             block.expressions.append(expression) [TODO: make this more enteligent]"""
-    return [block for block in blocks if not block.empty()]
+    blocks = [block for block in blocks if not block.empty()]
+    blocks_with_nested = list(blocks)
+    for block in blocks:
+        min_space = min([analysis._count_strarting_spaces(expresion) for expresion in block.expressions])
+        nested_blocks = get_expression_blocks([expresion for expresion in block.expressions if min_space<analysis._count_strarting_spaces(expresion)])
+        blocks_with_nested.extend(nested_blocks)
+    
+    return blocks_with_nested
