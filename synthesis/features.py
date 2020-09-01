@@ -10,23 +10,29 @@ def get_description(expressions, variable=None):
                 if len(term)>=min_predicate_length and not term=="def":
                     description += term+" "
         else:
-            if variable in get_input_variables([expression], [variable]) or variable in get_output_variables([expression]):
-                pred = "before"
-                for term in get_terms([expression], ignore_variables=False):
+            if variable in get_output_variables([expression]):
+                for term in get_terms([expression]):
+                    for subterm in term.split("_"):
+                        description += "before"+stemmer.stem(subterm)+" "
+            elif variable in get_input_variables([expression], [variable]):
+                pred = "after"
+                for term in get_terms([expression]):
                     if term=="def":
-                        continue
+                        break
                     if term == variable:
                         pred = "before"
-                        #description += variable.replace("_", " ")+" "
+                        for subterm in term.split("_"):
+                            description += "name"+stemmer.stem(subterm)+" "
                         continue
                     if variable+"."+term in expression:
                         description += "member"+term+" "
                         #print(variable, "MEMBER", term)
-                    else:
-                        description += term+" "
-                    #elif len(subterm)>=min_predicate_length:
                     #else:
-                    #    description += pred+term+" "
+                    #    description += term+" "
+                    #elif len(subterm)>=min_predicate_length:
+                    else:
+                        for subterm in term.split("_"):
+                            description += pred+stemmer.stem(subterm)+" "
                     #description += term+" "
     description = " ".join(list(set(description.split(" "))))
     if len(description)==0 and variable is None:
@@ -37,10 +43,10 @@ def get_description(expressions, variable=None):
 import nltk.tokenize
 def _word_tokenize(text):
     words = nltk.tokenize.word_tokenize(text)
-    ret = list()
-    for word in words:
-        ret.extend(word.split("_"))
-    return ret
+    #ret = list()
+    #for word in words:
+    #    ret.extend(word.split("_"))
+    return words
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 stemmer = PorterStemmer()
@@ -49,14 +55,29 @@ stopWords.add("return")
 
 def similarity(text1, text2):
     sim = 0
-    words1 = [stemmer.stem(word1) for word1 in _word_tokenize(text1.lower()) if len(word1)>=1 and not '_' in word1 and not word1 in stopWords]
-    words2 = [stemmer.stem(word2) for word2 in _word_tokenize(text2.lower()) if len(word2)>=1 and not '_' in word2 and not word2 in stopWords]
+    words1 = [word1 for word1 in _word_tokenize(text1.lower()) if len(word1)>=1 and not '_' in word1 and not word1 in stopWords]
+    words2 = [word2 for word2 in _word_tokenize(text2.lower()) if len(word2)>=1 and not '_' in word2 and not word2 in stopWords]
     #words1 = ly.unique(words1)
     #words2 = ly.unique(words2)
-    for word1 in set(words1):
-        for word2 in set(words2):
+    for word1 in words1:
+        for word2 in words2:
             if word1==word2:
-                sim += 1
+                sim += 1 if word1.startswith("member") or word1.startswith("name") else 0.4
+            else:
+                if word1.startswith("before"):
+                    word1 = word1[len("before"):]
+                elif word1.startswith("after"):
+                    word1 = word1[len("after"):]
+                elif word1.startswith("name"):
+                    word1 = word1[len("name"):]
+                if word2.startswith("before"):
+                    word2 = word2[len("before"):]
+                elif word2.startswith("after"):
+                    word2 = word2[len("after"):]
+                elif word2.startswith("name"):
+                    word2 = word2[len("name"):]
+                if word1==word2:
+                    sim -= 0.01
     return sim #* 10 / min([len(words1), len(words2)])
 
 

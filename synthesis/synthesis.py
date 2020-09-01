@@ -58,14 +58,14 @@ def synthesize(problem, texts, VARIABLE_STRICTNESS = None, BLOCK_STRICTNESS = 0,
     outcome.aligned = {}
     outcome.all_variables = list()
     outcome.expression_groups = list()
-
+    """
     print("=== DATABASE ===")
     for block in blocks:
         print('Forall:', ', '.join(block.inputs))
         print('Exist:', ', '.join(block.outputs))
         print('Features:', block.features)
         print("\n".join(block.expressions))
-
+    """
     """
     if VARIABLE_STRICTNESS is None:
         VARIABLE_STRICTNESS = 1
@@ -81,7 +81,7 @@ def synthesize(problem, texts, VARIABLE_STRICTNESS = None, BLOCK_STRICTNESS = 0,
         best_block = max(blocks, key = (lambda block: features.similarity(block.features, remaining_problem)-len(block.expressions)*CODE_SIZE_PENALTY))
         if features.similarity(best_block.features, remaining_problem)-len(best_block.expressions)*CODE_SIZE_PENALTY<BLOCK_STRICTNESS:
             break
-        already_assigned = list()
+        already_assigned = dict()
         for var1 in best_block.variable_descriptions.keys():
             if len(outcome.variable_descriptions)<=len(already_assigned):
                 break
@@ -89,14 +89,16 @@ def synthesize(problem, texts, VARIABLE_STRICTNESS = None, BLOCK_STRICTNESS = 0,
             best_var = max([var for var in outcome.variable_descriptions.keys() if var not in already_assigned], key = (lambda var2: features.variable_similarity(var1_keywords, outcome.variable_descriptions[var2])))
             for var in outcome.variable_descriptions.keys():
                 if var not in already_assigned:
-                    print(var1, var, features.variable_similarity(var1_keywords, outcome.variable_descriptions[best_var]))
+                    print(var1, var, features.variable_similarity(var1_keywords, outcome.variable_descriptions[var]))
                     print('\t', var1_keywords)
-                    print('\t', outcome.variable_descriptions[best_var])
+                    print('\t', outcome.variable_descriptions[var])
+                    print('\t', features.difference(var1_keywords, features.difference(var1_keywords,outcome.variable_descriptions[var])))
             if features.variable_similarity(var1_keywords, outcome.variable_descriptions[best_var])>=VARIABLE_STRICTNESS:
+                already_assigned[best_var] = var1
+        for best_var, var1 in already_assigned.items():
                 outcome.aligned[var1] = best_var
                 outcome.variable_descriptions[best_var] = features.combine(outcome.variable_descriptions.get(best_var,0), best_block.variable_descriptions[var1])
                 outcome.variable_descriptions[var1] = outcome.variable_descriptions[best_var]
-                already_assigned.append(best_var)
         for var1 in best_block.variable_descriptions:
             if var1 not in already_assigned:
                 if var1 not in outcome.variable_descriptions:
