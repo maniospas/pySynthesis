@@ -2,6 +2,7 @@ from synthesis import postprocess, analysis as ly, blocks as bl, features
 
 FLATTENING = False
 
+
 def _construct_blocks(texts):
     blocks = list()
     for text_id, text in enumerate(texts):
@@ -23,9 +24,6 @@ def _construct_blocks(texts):
         variables = list(variable_raname_map.values())
         #argument_variables = [variable_raname_map[var_name] for var_name in argument_variables]
         expressions = ly.alter_var_names(expressions, variable_raname_map)
-
-        print(variable_descriptions)
-        
         # find blocks and transform them to make suitable for synthesis
         for block in bl.get_expression_blocks(expressions):
             block.find_io(variables)
@@ -36,8 +34,8 @@ def _construct_blocks(texts):
                 if variable in variable_descriptions:
                     block.variable_descriptions[variable] = variable_descriptions[variable]
             blocks.append(block)
+    features.finished_imports()
     return blocks
-
 
 
 def import_from(file):
@@ -51,6 +49,7 @@ def import_from(file):
             accum += line
         lines.append(accum)
     return lines
+
 
 def synthesize(problem, texts, VARIABLE_STRICTNESS = None, BLOCK_STRICTNESS = 0, CODE_SIZE_PENALTY = 0.01):
     blocks = _construct_blocks(texts)
@@ -95,7 +94,7 @@ def synthesize(problem, texts, VARIABLE_STRICTNESS = None, BLOCK_STRICTNESS = 0,
                     print('\t', outcome.variable_descriptions[best_var])
             if features.variable_similarity(var1_keywords, outcome.variable_descriptions[best_var])>=VARIABLE_STRICTNESS:
                 outcome.aligned[var1] = best_var
-                outcome.variable_descriptions[best_var] += " "+best_block.variable_descriptions[var1]
+                outcome.variable_descriptions[best_var] = features.combine(outcome.variable_descriptions.get(best_var,0), best_block.variable_descriptions[var1])
                 outcome.variable_descriptions[var1] = outcome.variable_descriptions[best_var]
                 already_assigned.append(best_var)
         for var1 in best_block.variable_descriptions:

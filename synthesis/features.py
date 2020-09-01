@@ -22,6 +22,8 @@ def get_description(expressions, variable=None):
                     if variable+"."+term in expression:
                         description += "member"+term+" "
                         #print(variable, "MEMBER", term)
+                    else:
+                        description += term+" "
                     #elif len(subterm)>=min_predicate_length:
                     #else:
                     #    description += pred+term+" "
@@ -73,3 +75,9 @@ def difference(text1, text2):
         else:
             words2.remove(word_map.get(word,"")) #remove one entry only
     return result.strip()
+
+def combine(text1, text2):
+    return text1+" "+text2
+
+def finished_imports():
+    pass
