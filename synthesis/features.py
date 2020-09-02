@@ -35,7 +35,7 @@ def get_description(expressions, variable=None):
                             description += pred+stemmer.stem(subterm)+" "
                     #description += term+" "
     description = " ".join(list(set(description.split(" "))))
-    if len(description)==0 and variable is None:
+    if len(description)==0 and variable is None and len(expressions)!=0:
         raise Exception("Make sure that expressions have at least one predicate (this problem often appears if an expression string is passed on instead of a list of expression strings)")
     return description
 
@@ -68,14 +68,14 @@ def similarity(text1, text2):
                     word1 = word1[len("before"):]
                 elif word1.startswith("after"):
                     word1 = word1[len("after"):]
-                elif word1.startswith("name"):
-                    word1 = word1[len("name"):]
+                #elif word1.startswith("name"):
+                #    word1 = word1[len("name"):]
                 if word2.startswith("before"):
                     word2 = word2[len("before"):]
                 elif word2.startswith("after"):
                     word2 = word2[len("after"):]
-                elif word2.startswith("name"):
-                    word2 = word2[len("name"):]
+                #elif word2.startswith("name"):
+                #    word2 = word2[len("name"):]
                 if word1==word2:
                     sim -= 0.01
     return sim #* 10 / min([len(words1), len(words2)])

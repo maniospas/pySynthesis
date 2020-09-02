@@ -51,21 +51,34 @@ def import_from(file):
     return lines
 
 
-def synthesize(problem, texts, VARIABLE_STRICTNESS = None, BLOCK_STRICTNESS = 0, CODE_SIZE_PENALTY = 0.01):
+def _variables_to_align(outcome, best_block, VARIABLE_STRICTNESS):
+    already_assigned = dict()
+    for var1 in best_block.variable_descriptions.keys():
+        if len(outcome.variable_descriptions) <= len(already_assigned):
+            break
+        var1_keywords = best_block.variable_descriptions[var1]
+        best_var = max([var for var in outcome.variable_descriptions.keys() if var not in already_assigned], key=(
+            lambda var2: features.variable_similarity(var1_keywords, outcome.variable_descriptions[var2])))
+        if features.variable_similarity(var1_keywords, outcome.variable_descriptions[best_var]) >= VARIABLE_STRICTNESS:
+            already_assigned[best_var] = var1
+    return already_assigned
+
+
+def synthesize(problem, texts, VARIABLE_STRICTNESS = None, BLOCK_STRICTNESS = 0, CODE_SIZE_PENALTY = 0.01, VARIABLE_NUM_PENALTY=0.1):
     blocks = _construct_blocks(texts)
     remaining_problem = features.get_description([problem])
     outcome = bl.Block()
     outcome.aligned = {}
     outcome.all_variables = list()
     outcome.expression_groups = list()
-    """
+
     print("=== DATABASE ===")
     for block in blocks:
         print('Forall:', ', '.join(block.inputs))
         print('Exist:', ', '.join(block.outputs))
         print('Features:', block.features)
         print("\n".join(block.expressions))
-    """
+
     """
     if VARIABLE_STRICTNESS is None:
         VARIABLE_STRICTNESS = 1
@@ -78,23 +91,14 @@ def synthesize(problem, texts, VARIABLE_STRICTNESS = None, BLOCK_STRICTNESS = 0,
         print('AUTO DETECTED VARIABLE STRICTNESS:', VARIABLE_STRICTNESS)
     """
     while True:
-        best_block = max(blocks, key = (lambda block: features.similarity(block.features, remaining_problem)-len(block.expressions)*CODE_SIZE_PENALTY))
+        best_block = max(blocks, key = (lambda block:
+                                        features.similarity(block.features, remaining_problem)
+                                                            - len(block.expressions)*CODE_SIZE_PENALTY
+                                                            #+VARIABLE_NUM_PENALTY*len(_variables_to_align(outcome, block, VARIABLE_STRICTNESS))
+                                        ))
         if features.similarity(best_block.features, remaining_problem)-len(best_block.expressions)*CODE_SIZE_PENALTY<BLOCK_STRICTNESS:
             break
-        already_assigned = dict()
-        for var1 in best_block.variable_descriptions.keys():
-            if len(outcome.variable_descriptions)<=len(already_assigned):
-                break
-            var1_keywords = best_block.variable_descriptions[var1]
-            best_var = max([var for var in outcome.variable_descriptions.keys() if var not in already_assigned], key = (lambda var2: features.variable_similarity(var1_keywords, outcome.variable_descriptions[var2])))
-            for var in outcome.variable_descriptions.keys():
-                if var not in already_assigned:
-                    print(var1, var, features.variable_similarity(var1_keywords, outcome.variable_descriptions[var]))
-                    print('\t', var1_keywords)
-                    print('\t', outcome.variable_descriptions[var])
-                    print('\t', features.difference(var1_keywords, features.difference(var1_keywords,outcome.variable_descriptions[var])))
-            if features.variable_similarity(var1_keywords, outcome.variable_descriptions[best_var])>=VARIABLE_STRICTNESS:
-                already_assigned[best_var] = var1
+        already_assigned = _variables_to_align(outcome, best_block, VARIABLE_STRICTNESS)
         for best_var, var1 in already_assigned.items():
                 outcome.aligned[var1] = best_var
                 outcome.variable_descriptions[best_var] = features.combine(outcome.variable_descriptions.get(best_var,0), best_block.variable_descriptions[var1])
@@ -113,6 +117,7 @@ def synthesize(problem, texts, VARIABLE_STRICTNESS = None, BLOCK_STRICTNESS = 0,
         remaining_problem = features.difference(remaining_problem, best_block.features)
 
         # show currently implemented solution
+        """
         print("\n=== NEXT ITERATION ===")
         print('Forall:', ', '.join(outcome.inputs))
         print('Exist:', ', '.join(outcome.outputs))
@@ -120,7 +125,8 @@ def synthesize(problem, texts, VARIABLE_STRICTNESS = None, BLOCK_STRICTNESS = 0,
         print("\n".join(outcome.expressions))
         for v1, v2 in outcome.aligned.items():
             print(v1,'===',v2)
-
+        """
+    print("# TODO: ", remaining_problem)
     outcome.all_variables = ly.unique(outcome.all_variables)
     outcome.expressions = ly.alter_var_names(outcome.expressions, outcome.aligned)
     outcome.expressions = postprocess.fix_code_order(outcome.expressions, outcome.expression_groups, outcome.all_variables) # don't use expression_groups after this point
