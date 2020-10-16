@@ -88,9 +88,12 @@ def _variables_to_align(outcome, best_block, VARIABLE_STRICTNESS):
     return already_assigned
     """
 
+block_memoization = dict()
 
 def synthesize(problem, texts, VARIABLE_STRICTNESS = None, BLOCK_STRICTNESS = 0, CODE_SIZE_PENALTY = 0.001, VARIABLE_NUM_PENALTY=0.1, single_output=False):
-    blocks = _construct_blocks(texts)
+    if id(texts) not in block_memoization:
+        block_memoization[id(texts)] = _construct_blocks(texts)
+    blocks = block_memoization[id(texts)]
     remaining_problem = features.get_description([problem], allow_repetitions=True)
     outcome = bl.Block()
     outcome.aligned = {}

@@ -59,6 +59,10 @@ stemmer = PorterStemmer()
 stopWords = set(stopwords.words('english'))
 stopWords.add("return")
 
+def tokenize(text, allow_stopwords=False):
+    # external access point
+    return [word for word in _word_tokenize(text.lower()) if len(word) >= 1 and not '_' in word and (allow_stopwords or not word in stopWords)]
+
 def similarity(text1, text2):
     sim = 0
     words1 = [word1 for word1 in _word_tokenize(text1.lower()) if len(word1)>=1 and not '_' in word1 and not word1 in stopWords]
@@ -70,7 +74,12 @@ def similarity(text1, text2):
             word1 = word1iter
             word2 = word2iter
             if word1==word2:#and "after" not in word1 and "before" not in word1:
-                sim += 1 if word1.startswith("member") or word1.startswith("name") else 0.1
+                if word1.startswith("member"):
+                    sim += 1
+                elif word1.startswith("name"):
+                    sim += 1
+                else:
+                    sim += 0.1
             """else:
                 #if "assigned"==word1 or "assigned"==word2:
                 #    sim -= 0.01

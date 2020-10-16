@@ -38,6 +38,7 @@ def pagerank(G, prior_ranks, a, msq_error):
 
 
 def train_lr(x_train, y_train, preprocessing="normalize"):
+    # create a logistic regression model
     model = LogisticRegression()
     # select preprocessing method
     if preprocessing == "normalize":
