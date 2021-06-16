@@ -1,6 +1,6 @@
 from synthesis import synthesis as synth
 
-lines = synth.import_from("example.py")
+lines = synth.import_from("examples/example.py")
 test1 = "Calculate PageRank."
 test2 = "Calculate PageRank with normalized priors."
 test3 = "Calculate PageRank with symmetric normalization and normalized priors."
