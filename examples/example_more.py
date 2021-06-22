@@ -14,7 +14,7 @@ def visualize(G, p):
     data['nodes'] = [{'id':str(u),'color_intensity':normalized_prior_ranks[u]} for u in G.nodes()]
     data['links'] = [{'source':str(node1),'target':str(node2),'value':1} for node1,node2 in G.edges()]
     import os, json
-    with open('visualize/data.json', 'w') as outfile:  
+    with open('visualize/data.json', 'w') as outfile:
         json.dump(data, outfile)
     os.system('start firefox.exe "file:///'+os.getcwd()+'/visualize/visualize.html"')
 
@@ -35,6 +35,26 @@ def pagerank(G, prior_ranks, a, msq_error):
         if msq/len(G.nodes())<msq_error:
             break
     return ranks
+
+
+def pagerank_fast(G, prior_ranks, a, msq_error, order):
+    # calculate normalization parameters of symmetric Laplacian
+    degv = {v : float(len(list(G.neighbors(v))))**0.5 for v in G.nodes()}
+    degu = {u : float(len(list(G.neighbors(u))))**0.5 for u in G.nodes()}
+    # iterate to calculate PageRank using quotient
+    ranks = prior_ranks
+    while True:
+        msq = 0
+        next_ranks = {}
+        for u in G.nodes():
+            rank = sum(ranks[v]/degv[v]/degu[u] for v in G.neighbors(u))
+            next_ranks[u] = rank*a + prior_ranks[u]*(1-a)
+            msq += (next_ranks[u]-ranks[u])**2
+        ranks = next_ranks / np.norm(next_ranks.sum(), order)
+        if msq/len(G.nodes())<msq_error:
+            break
+    return ranks
+
 
 def train_lr(x_train, y_train, preprocessing="normalize"):
     # create a logistic regression model

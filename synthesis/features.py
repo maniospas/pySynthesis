@@ -61,7 +61,7 @@ stopWords.add("return")
 
 def tokenize(text, allow_stopwords=False):
     # external access point
-    return [word for word in _word_tokenize(text.lower()) if len(word) >= 1 and not '_' in word and (allow_stopwords or not word in stopWords)]
+    return [word for word in _word_tokenize(text.lower()) if len(word) >= 1 and not '_' in word and (allow_stopwords or (len(word)>1 and not word in stopWords))]
 
 def similarity(text1, text2):
     sim = 0

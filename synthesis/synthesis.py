@@ -39,6 +39,8 @@ def _construct_blocks(texts):
 
 
 def import_from(file):
+    if file[-3:] != ".py":
+        return []
     lines = list()
     with open(file) as f:
         accum = ""
@@ -90,7 +92,7 @@ def _variables_to_align(outcome, best_block, VARIABLE_STRICTNESS):
 
 block_memoization = dict()
 
-def synthesize(problem, texts, VARIABLE_STRICTNESS = None, BLOCK_STRICTNESS = 0, CODE_SIZE_PENALTY = 0.001, VARIABLE_NUM_PENALTY=0.1, single_output=False):
+def synthesize(problem, texts, VARIABLE_STRICTNESS = None, BLOCK_STRICTNESS = 0, CODE_SIZE_PENALTY = 0.001, VARIABLE_NUM_PENALTY=0.1, single_output=False, verbose=False):
     if id(texts) not in block_memoization:
         block_memoization[id(texts)] = _construct_blocks(texts)
     blocks = block_memoization[id(texts)]
@@ -155,15 +157,18 @@ def synthesize(problem, texts, VARIABLE_STRICTNESS = None, BLOCK_STRICTNESS = 0,
         iteration += 1
 
         # show currently implemented solution
-        """print("\n=== NEXT ITERATION ===")
-        print('TODO:', remaining_problem)
-        print('Forall:', ', '.join(outcome.inputs))
-        print('Exist:', ', '.join(outcome.outputs))
-        print("\n".join(outcome.expressions))
-        for v1, v2 in outcome.aligned.items():
-            print(v1,'===',v2)"""
-        
-    #print("# TODO: ", remaining_problem)
+        if verbose:
+            print("\n===== NEXT ITERATION =====")
+            print('TODO:', remaining_problem)
+            print('Forall:', ', '.join(outcome.inputs))
+            print('Exist:', ', '.join(outcome.outputs))
+            print("\n".join(outcome.expressions))
+            for v1, v2 in outcome.aligned.items():
+                print(v1,'===',v2)
+
+    if verbose:
+        print("\n===== FINAL SOLUTION =====")
+        print("# TODO: ", remaining_problem)
     outcome.all_variables = ly.unique(outcome.all_variables)
     for _ in range(len(outcome.aligned)):#TODO: stop this from doing needless repetitions
         outcome.expressions = ly.alter_var_names(outcome.expressions, outcome.aligned)
