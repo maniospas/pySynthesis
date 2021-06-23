@@ -17,22 +17,22 @@ def _construct_blocks(texts):
         variables.extend(argument_variables)
         variables = ly.unique(variables)
         # get variable descriptions and new names
-        variable_rename_inverse_map = {"___block"+str(text_id)+"_"+var_name: var_name for var_name in variables}
-        variable_raname_map = {var_name: "___block"+str(text_id)+"_"+var_name for var_name in variables}
-        variable_descriptions = {variable_raname_map[variable]: features.get_description(expressions, variable) for variable in variables}
-        # rename variables
-        variables = list(variable_raname_map.values())
-        #argument_variables = [variable_raname_map[var_name] for var_name in argument_variables]
-        expressions = ly.alter_var_names(expressions, variable_raname_map)
+        variable_descriptions = {variable: features.get_description(expressions, variable) for variable in variables}
+
         # find blocks and transform them to make suitable for synthesis
         for block in bl.get_expression_blocks(expressions):
-            block.find_io(variables)
+            block_id = len(blocks)
+            variable_raname_map = {var_name: "___block"+str(block_id)+"_"+var_name for var_name in variables}
+            inv_variable_raname_map = {"___block"+str(block_id)+"_"+var_name: var_name for var_name in variables}
+            block_variables = list(variable_raname_map.values())
+            block.expressions = ly.alter_var_names(block.expressions, variable_raname_map)
+            block.find_io(block_variables)
             block.features = features.get_description([block.comments]+block.expressions)
             for variable in block.inputs:
-                block.variable_descriptions[variable] = variable_descriptions[variable]
+                block.variable_descriptions[variable] = variable_descriptions[inv_variable_raname_map[variable]]
             for variable in block.outputs:
-                if variable in variable_descriptions:
-                    block.variable_descriptions[variable] = variable_descriptions[variable]
+                if inv_variable_raname_map[variable] in variable_descriptions:
+                    block.variable_descriptions[variable] = variable_descriptions[inv_variable_raname_map[variable]]
             blocks.append(block)
     features.finished_imports()
     return blocks
@@ -92,7 +92,7 @@ def _variables_to_align(outcome, best_block, VARIABLE_STRICTNESS):
 
 block_memoization = dict()
 
-def synthesize(problem, texts, VARIABLE_STRICTNESS = None, BLOCK_STRICTNESS = 0, CODE_SIZE_PENALTY = 0.001, VARIABLE_NUM_PENALTY=0.1, single_output=False, verbose=False):
+def synthesize(problem, texts, VARIABLE_STRICTNESS = None, BLOCK_STRICTNESS = 0, CODE_SIZE_PENALTY = 0.001, VARIABLE_NUM_PENALTY=0.1, rename_after_each_step=True, single_output=False, verbose=False, show_known=False):
     if id(texts) not in block_memoization:
         block_memoization[id(texts)] = _construct_blocks(texts)
     blocks = block_memoization[id(texts)]
@@ -101,14 +101,13 @@ def synthesize(problem, texts, VARIABLE_STRICTNESS = None, BLOCK_STRICTNESS = 0,
     outcome.aligned = {}
     outcome.all_variables = list()
     outcome.expression_groups = list()
-    """
-    print("=== DATABASE ===")
-    for block in blocks:
-        print('Forall:', ', '.join(block.inputs))
-        print('Exist:', ', '.join(block.outputs))
-        print('Features:', block.features)
-        print("\n".join(block.expressions))
-    """
+    if show_known:
+        for block_id, block in enumerate(blocks):
+            print("\n===== KNOWN BLOCK", block_id, "=====")
+            print('Forall:', ', '.join(block.inputs).replace("___", ""))
+            print('Exist:', ', '.join(block.outputs).replace("___", ""))
+            print('#', block.features.replace("___", ""))
+            print("\n".join(block.expressions).replace("___", ""))
     """
     if VARIABLE_STRICTNESS is None:
         VARIABLE_STRICTNESS = 1
@@ -146,25 +145,26 @@ def synthesize(problem, texts, VARIABLE_STRICTNESS = None, BLOCK_STRICTNESS = 0,
         outcome.find_io(outcome.all_variables)
         remaining_problem = features.difference(remaining_problem, best_block.features)
         # rename block variables
-        outcome.expressions = ly.alter_var_names(outcome.expressions, {var: var.replace("___block", "___synth"+str(iteration)+"blk") for var in outcome.all_variables})
-        outcome.inputs = [var.replace("___block", "___synth"+str(iteration)+"blk") for var in outcome.inputs]
-        outcome.outputs = [var.replace("___block", "___synth"+str(iteration)+"blk") for var in outcome.outputs]
-        outcome.all_variables = [var.replace("___block", "___synth"+str(iteration)+"blk") for var in outcome.all_variables]
-        outcome.inputs = [var.replace("___block", "___synth"+str(iteration)+"blk") for var in outcome.inputs]
-        outcome.outputs = [var.replace("___block", "___synth"+str(iteration)+"blk") for var in outcome.outputs]
-        outcome.variable_descriptions = {var.replace("___block", "___synth"+str(iteration)+"blk"): val for var, val in outcome.variable_descriptions.items()}
-        outcome.aligned = {var1.replace("___block", "___synth"+str(iteration)+"blk"): var2.replace("___block", "___synth"+str(iteration)+"blk") for var1, var2 in outcome.aligned.items()}
+        if rename_after_each_step:
+            outcome.expressions = ly.alter_var_names(outcome.expressions, {var: var.replace("___block", "___synth"+str(iteration)+"blk") for var in outcome.all_variables})
+            outcome.inputs = [var.replace("___block", "___synth"+str(iteration)+"blk") for var in outcome.inputs]
+            outcome.outputs = [var.replace("___block", "___synth"+str(iteration)+"blk") for var in outcome.outputs]
+            outcome.all_variables = [var.replace("___block", "___synth"+str(iteration)+"blk") for var in outcome.all_variables]
+            outcome.inputs = [var.replace("___block", "___synth"+str(iteration)+"blk") for var in outcome.inputs]
+            outcome.outputs = [var.replace("___block", "___synth"+str(iteration)+"blk") for var in outcome.outputs]
+            outcome.variable_descriptions = {var.replace("___block", "___synth"+str(iteration)+"blk"): val for var, val in outcome.variable_descriptions.items()}
+            outcome.aligned = {var1.replace("___block", "___synth"+str(iteration)+"blk"): var2.replace("___block", "___synth"+str(iteration)+"blk") for var1, var2 in outcome.aligned.items()}
         iteration += 1
 
         # show currently implemented solution
         if verbose:
             print("\n===== NEXT ITERATION =====")
             print('TODO:', remaining_problem)
-            print('Forall:', ', '.join(outcome.inputs))
-            print('Exist:', ', '.join(outcome.outputs))
-            print("\n".join(outcome.expressions))
+            print('Forall:', ', '.join(outcome.inputs).replace("___", ""))
+            print('Exist:', ', '.join(outcome.outputs).replace("___", ""))
+            print("\n".join(outcome.expressions).replace("___", ""))
             for v1, v2 in outcome.aligned.items():
-                print(v1,'===',v2)
+                print(v1.replace("___", ""),'===',v2.replace("___", ""))
 
     if verbose:
         print("\n===== FINAL SOLUTION =====")

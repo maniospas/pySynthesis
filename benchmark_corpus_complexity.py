@@ -54,11 +54,17 @@ for num_lines in tqdm(range(1, num_all_lines)):
             complexities[test_complexity] = list()
         complexities[test_complexity].append(end-start)
 
-complexities, times = [c for c in complexities], [sum(complexities[c])/len(complexities[c]) for c in complexities]
-plt.scatter(complexities, times)
-b, m = polyfit(complexities, times, 1)
-print("Correlation", scipy.stats.pearsonr(complexities, times)[0])
+
+avg_times = [sum(complexities[c])/len(complexities[c]) for c in complexities]
+std_times = [np.std(np.array(complexities[c])) for c in complexities]
+max_times = [np.max(np.array(complexities[c])) for c in complexities]
+complexities = [c for c in complexities]
+
+plt.errorbar(complexities, avg_times, np.array(std_times), linestyle='None', marker='o')
+b, m = polyfit(complexities, avg_times, 1)
+print("Correlation with avg", scipy.stats.pearsonr(complexities, avg_times)[0])
+print("Correlation with std", scipy.stats.pearsonr(complexities, std_times)[0])
 plt.plot(complexities, b + m * np.array(complexities), '-', color='red')
-plt.xlabel("Total Code Comment Expressions")
+plt.xlabel("Total known specification complexity")
 plt.ylabel("Running time (sec)")
 plt.show()

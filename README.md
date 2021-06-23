@@ -62,6 +62,20 @@ If you reuse or derive code as part of your research, we ask that you cite the f
 *Defining Behaviorizeable Relations to Enable Inference in Semi-Automatic Program Synthesis*,
 Journal of Logical and Algebraic Methods in Programming, 2021
 
+## Exposing Internal Steps
+To expose how synthesis works, add the `--show-known` option to display imported code blocks
+add the `--verbose` option to show intermediate steps. To avoid renaming intermediate variables
+and thus keep compatible variable names between the two options, use `--explain` instead of the
+second one. For example: 
+```bash
+python synth.py "pagerank with symmetric normalization" examples/example.py --explain --show-known
+```
+
+:warn: The `--explain` option could very rarely introduce erroneous synthesis
+outcome if the same code block is added more than one time to produced program
+(this should happen only rarely and typically means that specification were
+misunderstood).
+
 ## Benchmarks
 Benchmarks additionally depend on the *tqdm,numpy,matplotlib* libraries.
 After installing these libraries, the running time measurements of our 
