@@ -71,8 +71,8 @@ second one. For example:
 python synth.py "pagerank with symmetric normalization" examples/example.py --explain --show-known
 ```
 
-:warning: The `--explain` option could very rarely introduce erroneous synthesis
-outcome if the same code block is added more than one time to produced program
+:warning: The `--explain` option could introduce erroneous synthesis outcome 
+if the same code block is added more than one time to the synthesized program
 (this should happen only rarely and typically means that specification were
 misunderstood).
 
