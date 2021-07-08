@@ -71,7 +71,7 @@ second one. For example:
 python synth.py "pagerank with symmetric normalization" examples/example.py --explain --show-known
 ```
 
-:warn: The `--explain` option could very rarely introduce erroneous synthesis
+:warning: The `--explain` option could very rarely introduce erroneous synthesis
 outcome if the same code block is added more than one time to produced program
 (this should happen only rarely and typically means that specification were
 misunderstood).
@@ -80,7 +80,7 @@ misunderstood).
 Benchmarks additionally depend on the *tqdm,numpy,matplotlib* libraries.
 After installing these libraries, the running time measurements of our 
 paper can be replicated by running the scripts:
-- `benchmark_specification_complexity.to`
+- `benchmark_specification_complexity.py`
 to analyse how synthesis time scales with user specification complexity
 - `benchmark_corpus_complexity.py` 
 to analyse how synthesis time scales with the total complexity of known specifications
