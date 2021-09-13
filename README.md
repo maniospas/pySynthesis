@@ -55,12 +55,18 @@ from the example code file (try --vstrict 1.1 and --vstrict 1.2):
 ```
 
 ## Reference
-If you reuse or derive code as part of your research, we ask that you cite the following work 
-(currently under review):
-<br/>
-**[1]** Emmanouil Krasanakis and Andreas Symeonidis,
-*Defining Behaviorizeable Relations to Enable Inference in Semi-Automatic Program Synthesis*,
-Journal of Logical and Algebraic Methods in Programming, 2021
+If you reuse or derive code as part of your research, we ask that you cite the following work:
+
+```
+@article{krasanakis2021defining,
+  title={Defining Behaviorizeable Relations to Enable Inference in Semi-Automatic Program Synthesis},
+  author={Krasanakis, Emmanouil and Symeonidis, Andreas},
+  journal={Journal of Logical and Algebraic Methods in Programming},
+  pages={100714},
+  year={2021},
+  publisher={Elsevier}
+}
+```
 
 ## Exposing Internal Steps
 To expose how synthesis works, add the `--show-known` option to display imported code blocks
@@ -73,7 +79,7 @@ python synth.py "pagerank with symmetric normalization" examples/example.py --ex
 
 :warning: The `--explain` option could introduce erroneous synthesis outcome 
 if the same code block is added more than one time to the synthesized program
-(this should happen only rarely and typically means that specification were
+(this should happen only rarely and typically means that specifications were
 misunderstood).
 
 ## Benchmarks
