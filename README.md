@@ -25,7 +25,7 @@ based on a file of example implementations, run:
 ```bash
 python synth.py "train and evaluate and save an SVR model" examples/example.py
 ```
-outputs the following code:
+This outputs the following code:
 ```python
 def solution(x, y, path):
     svr = SVR()
@@ -69,7 +69,7 @@ If you reuse or derive code as part of your research, we ask that you cite the f
 ```
 
 ## Exposing Internal Steps
-To expose how synthesis works, add the `--show-known` option to display imported code blocks
+To expose how synthesis works, add the `--show-known` option. To display imported code blocks
 add the `--verbose` option to show intermediate steps. To avoid renaming intermediate variables
 and thus keep compatible variable names between the two options, use `--explain` instead of the
 second one. For example: 
@@ -77,15 +77,15 @@ second one. For example:
 python synth.py "pagerank with symmetric normalization" examples/example.py --explain --show-known
 ```
 
-:warning: The `--explain` option could introduce erroneous synthesis outcome 
+:warning: The `--explain` option could introduce erroneous synthesis outcomes 
 if the same code block is added more than one time to the synthesized program
 (this should happen only rarely and typically means that specifications were
 misunderstood).
 
 ## Benchmarks
 Benchmarks additionally depend on the *tqdm,numpy,matplotlib* libraries.
-After installing these libraries, the running time measurements of our 
-paper can be replicated by running the scripts:
+After installing these, the running time measurements of our 
+paper can be replicated by the scripts:
 - `benchmark_specification_complexity.py`
 to analyse how synthesis time scales with user specification complexity
 - `benchmark_corpus_complexity.py` 
