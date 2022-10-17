@@ -56,6 +56,9 @@ from the example code file (try --vstrict 1.1 and --vstrict 1.2):
 ## GUI
 Run the file *synthui.py* to perform synthesis with a GUI.
 
+https://user-images.githubusercontent.com/2576023/196159267-48079c19-c4c8-418c-8037-0dd9add56b0b.mp4
+
+
 ## Reference
 If you reuse or derive code as part of your research, we ask that you cite the following work:
 
