@@ -15,7 +15,23 @@ nltk
 <br/>
 Emmanouil (Manios) Krasanakis, manios.krasanakis@issel.ee.auth.gr
 
-## Usage
+**Contents**
+1. [Demo](#demo)
+2. [Command line](#command-line)
+3. [Citation](#citation)
+4. [Internal step](#internal-steps)
+5. [Benchmarks](#benchmarks)
+
+
+## Demo
+Install Python and necessary dependencies. Then run 
+the file *synthui.py* to perform synthesis:
+
+https://user-images.githubusercontent.com/2576023/196159267-48079c19-c4c8-418c-8037-0dd9add56b0b.mp4
+
+:warning: For other synthesis tasks, you need to provide example code.
+
+## Command line
 Install Python and necessary dependencies, open a terminal
 in the project's folder and run the command:
 `python synth.py -h` to view all possible arguments.
@@ -53,13 +69,7 @@ from the example code file (try --vstrict 1.1 and --vstrict 1.2):
 "Train and evaluate a logistic regression model using standardization on training data."
 ```
 
-## GUI
-Run the file *synthui.py* to perform synthesis with a GUI.
-
-https://user-images.githubusercontent.com/2576023/196159267-48079c19-c4c8-418c-8037-0dd9add56b0b.mp4
-
-
-## Reference
+## Citation
 If you reuse or derive code as part of your research, we ask that you cite the following work:
 
 ```
@@ -73,7 +83,7 @@ If you reuse or derive code as part of your research, we ask that you cite the f
 }
 ```
 
-## Exposing Internal Steps
+## Internal steps
 To expose how synthesis works, add the `--show-known` option. To display imported code blocks
 add the `--verbose` option to show intermediate steps. To avoid renaming intermediate variables
 and thus keep compatible variable names between the two options, use `--explain` instead of the
