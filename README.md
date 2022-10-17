@@ -1,12 +1,11 @@
 # pySynthesis
 This tool enables the automatic synthesis of Python methods by linearly 
 combining blocks of existing code whose comments match a provided textual
-description (this is considered the synthesis specifications).
-
-The matching mechanism implements a behavioraizeable relation [1] and thus
+description (this is considered the synthesis specifications). 
+The matching mechanism implements a behaviorizeable relation [1] and thus
 guarantees that there is an underlying logical system in which synthesis
 performs inference. In simple terms, you *can* learn to use this tool to 
-easily combine blocks of code
+easily combine blocks of code.
 
 **Dependencies**
 <br/>
@@ -54,6 +53,9 @@ from the example code file (try --vstrict 1.1 and --vstrict 1.2):
 "Train and evaluate a logistic regression model using standardization on training data."
 ```
 
+## GUI
+Run the file *synthui.py* to perform synthesis with a GUI.
+
 ## Reference
 If you reuse or derive code as part of your research, we ask that you cite the following work:
 
@@ -91,3 +93,15 @@ to analyse how synthesis time scales with user specification complexity
 - `benchmark_corpus_complexity.py` 
 to analyse how synthesis time scales with the total complexity of known specifications
 in corpora of various sizes
+
+# New Examples
+```
+python synth.py "run default personalized pagerank from a small graph's signal and assess it on a signal split" examples\pygrank_snippets.py
+```
+
+```
+"run personalized pagerank"
+"run default personalized pagerank"
+```
+
+

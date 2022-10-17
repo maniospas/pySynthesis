@@ -18,7 +18,6 @@ def _construct_blocks(texts):
         variables = ly.unique(variables)
         # get variable descriptions and new names
         variable_descriptions = {variable: features.get_description(expressions, variable) for variable in variables}
-
         # find blocks and transform them to make suitable for synthesis
         for block in bl.get_expression_blocks(expressions):
             block_id = len(blocks)
@@ -31,7 +30,7 @@ def _construct_blocks(texts):
             for variable in block.inputs:
                 block.variable_descriptions[variable] = variable_descriptions[inv_variable_raname_map[variable]]
             for variable in block.outputs:
-                if inv_variable_raname_map[variable] in variable_descriptions:
+                if variable in inv_variable_raname_map and inv_variable_raname_map[variable] in variable_descriptions:
                     block.variable_descriptions[variable] = variable_descriptions[inv_variable_raname_map[variable]]
             blocks.append(block)
     features.finished_imports()
@@ -60,6 +59,7 @@ def _variables_to_align(outcome, best_block, VARIABLE_STRICTNESS):
     #print(best_block.variable_descriptions)
     #print(outcome.expressions)
     #print([(var1, var2, sim) for var1, var2, sim in sims])
+
     already_assigned = dict()
     already_assigned_sim = dict()
     for var1, var2, sim in sims:
@@ -76,8 +76,8 @@ def _variables_to_align(outcome, best_block, VARIABLE_STRICTNESS):
         if len(outcome.variable_descriptions) <= 0:
             break
         var1_keywords = best_block.variable_descriptions[var1]
-        for var in outcome.variable_descriptions.keys():
-            print(var1, var, features.variable_similarity(var1_keywords, outcome.variable_descriptions[var]))
+        #for var in outcome.variable_descriptions.keys():
+        #    print(var1, var, features.variable_similarity(var1_keywords, outcome.variable_descriptions[var]))
         best_var = max([var for var in outcome.variable_descriptions.keys() 
                         #if var not in already_assigned
                         ], key=(
@@ -86,13 +86,15 @@ def _variables_to_align(outcome, best_block, VARIABLE_STRICTNESS):
         if sim >= already_assigned_sim.get(best_var, VARIABLE_STRICTNESS):
             already_assigned[best_var] = var1
             already_assigned_sim[best_var] = sim
-    print(already_assigned)
-    return already_assigned
-    """
+    #print(already_assigned)
+    return already_assigned"""
 
 block_memoization = dict()
 
-def synthesize(problem, texts, VARIABLE_STRICTNESS = None, BLOCK_STRICTNESS = 0, CODE_SIZE_PENALTY = 0.001, VARIABLE_NUM_PENALTY=0.1, rename_after_each_step=True, single_output=False, verbose=False, show_known=False):
+
+def synthesize(problem, texts, VARIABLE_STRICTNESS = None, BLOCK_STRICTNESS = 0, CODE_SIZE_PENALTY = 0.001,
+               VARIABLE_NUM_PENALTY=0.1,
+               rename_after_each_step=True, single_output=False, verbose=False, show_known=False, show_remaining=False):
     if id(texts) not in block_memoization:
         block_memoization[id(texts)] = _construct_blocks(texts)
     blocks = block_memoization[id(texts)]
@@ -170,9 +172,11 @@ def synthesize(problem, texts, VARIABLE_STRICTNESS = None, BLOCK_STRICTNESS = 0,
         print("\n===== FINAL SOLUTION =====")
         print("# TODO: ", remaining_problem)
     outcome.all_variables = ly.unique(outcome.all_variables)
-    for _ in range(len(outcome.aligned)):#TODO: stop this from doing needless repetitions
+    for _ in range(len(outcome.aligned)): #TODO: stop this from doing needless repetitions
         outcome.expressions = ly.alter_var_names(outcome.expressions, outcome.aligned)
     outcome.expressions = postprocess.fix_code_order(outcome.expressions, outcome.expression_groups, outcome.all_variables, single_output) # don't use expression_groups after this point
+    if show_remaining and len(remaining_problem):
+        outcome.expressions = ["    # TODO: "+remaining_problem]+outcome.expressions
     if FLATTENING:
         outcome.expressions = ly.deflatten(outcome.expressions)
     return postprocess.convert_to_code(outcome, outcome.all_variables)

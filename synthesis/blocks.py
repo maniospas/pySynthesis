@@ -74,9 +74,12 @@ def get_expression_blocks(expressions):
     blocks = [block for block in blocks if not block.empty()]
     blocks_with_nested = list(blocks)
     for block in blocks:
-        block.convert_to_level(4)
-        min_space = min([analysis._count_strarting_spaces(expresion) for expresion in block.expressions])
-        nested_blocks = get_expression_blocks([expresion for expresion in block.expressions if min_space < analysis._count_strarting_spaces(expresion)])
-        blocks_with_nested.extend(nested_blocks)
+        try:
+            block.convert_to_level(4)
+            min_space = min([analysis._count_strarting_spaces(expresion) for expresion in block.expressions])
+            nested_blocks = get_expression_blocks([expresion for expresion in block.expressions if min_space < analysis._count_strarting_spaces(expresion)])
+            blocks_with_nested.extend(nested_blocks)
+        except:
+            pass
     
     return blocks_with_nested

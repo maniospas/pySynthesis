@@ -16,10 +16,12 @@ parser.add_argument('--explain', action="store_true", help='Can yield WRONG RESU
 
 args = parser.parse_args()
 lines = synth.import_from(args.code)
-if len(lines)==0:
+if len(lines) == 0:
     for (dirpath, dirnames, filenames) in os.walk(args.code):
         for file in filenames:
-            lines += synth.import_from(os.path.join(dirpath, file))
+            path = os.path.join(dirpath, file)
+            if "venv" not in path:
+                lines += synth.import_from(path)
 #try:
 if len(lines) == 0:
     raise Exception("No source code imported")

@@ -52,6 +52,7 @@ def train_lr(x_train, y_train, preprocessing="normalize"):
 
 
 def test(x_train, y_train, x_test, y_test):
+    # create a logistic regression
     model = LogisticRegression()
     model.train(x_train, y_train)
     # Evaluate using test data
@@ -60,6 +61,7 @@ def test(x_train, y_train, x_test, y_test):
 
 
 def createSVR(x, y):
+    # create an svr model
     svr = SVR()
     svr.train(x, y)
     return svr

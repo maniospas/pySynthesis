@@ -122,6 +122,7 @@ def difference(text1, text2):
             result += word + " "
     return result.strip()
 
+
 def combine(text1, text2):
     return text1+" "+text2#+" assigned"
 
