@@ -93,5 +93,4 @@ def run():
     root.mainloop()
 
 
-if __name__ == "main":
-    run()
+run()
